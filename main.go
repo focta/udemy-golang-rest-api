@@ -10,9 +10,19 @@ import (
 
 func main() {
 	db := db.NewDB()
+	// reposirotyのインジェクション
 	userRepository := repository.NewUserRepository(db)
+	taskRepository := repository.NewTaskRepository(db)
+
+	// usecasのインジェクション
 	userUsecase := usecase.NewUserUsecase(userRepository)
+	taskUsecase := usecase.NewTaskUsecase(taskRepository)
+
+	// Controllerのインジェクション
 	userController := controller.NewUserController(userUsecase)
-	e := router.NewRouter(userController)
+	taskController := controller.NewTaskController(taskUsecase)
+
+	// Controllerの実体を渡す
+	e := router.NewRouter(userController,taskController)
 	e.Logger.Fatal(e.Start(":8080"))
 }
