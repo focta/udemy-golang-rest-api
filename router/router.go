@@ -2,20 +2,44 @@ package router
 
 import (
 	"go-rest-api/controller"
+	"net/http"
 	"os"
 
 	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func NewRouter(uc controller.IUserController, tc controller.ITaskController) *echo.Echo {
 	e := echo.New()
+
+	// ミドルウェアの設定
+	// CORSの設定
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins:     []string{"http://localhost:3000", os.Getenv("FE_URL")},
+		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAccessControlAllowHeaders, echo.HeaderXCSRFToken},
+		AllowMethods:     []string{"GET", "PUT", "POST", "DELETE"},
+		AllowCredentials: true, // cookieを利用するためにtrueとしてる
+	}))
+
+	// CSRFの設定
+	e.Use(middleware.CSRFWithConfig(middleware.CSRFConfig{
+		CookiePath:     "/",
+		CookieDomain:   os.Getenv("API_DOMAIN"),
+		CookieHTTPOnly: true,
+		CookieSameSite: http.SameSiteNoneMode, //  本格的に動く際の設定
+		// CookieSameSite: http.SameSiteDefaultMode, //  ローカルでのテスト用の設定
+		// CookieMaxAge: 60, // cookieの寿命の設定
+	}))
+
+	// 各Controllerの設定
 	e.POST("/signup", uc.SignUp)
 	e.POST("/login", uc.Login)
 	e.POST("/logout", uc.Logout)
+	e.GET("/csrf", uc.CsrfToken)
 	t := e.Group("/tasks")
 	t.Use(echojwt.WithConfig(echojwt.Config{
-		SigningKey: []byte(os.Getenv("SECRET")),
+		SigningKey:  []byte(os.Getenv("SECRET")),
 		TokenLookup: "cookie:token",
 	}))
 

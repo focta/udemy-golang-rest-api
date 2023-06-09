@@ -6,17 +6,23 @@ import (
 	"go-rest-api/repository"
 	"go-rest-api/router"
 	"go-rest-api/usecase"
+	"go-rest-api/validator"
 )
 
 func main() {
 	db := db.NewDB()
+
+	// バリデーションのインジェクション
+	userValidator := validator.NewUserValidator()
+	taskValidator := validator.NewTaskValidator()
+
 	// reposirotyのインジェクション
 	userRepository := repository.NewUserRepository(db)
 	taskRepository := repository.NewTaskRepository(db)
 
 	// usecasのインジェクション
-	userUsecase := usecase.NewUserUsecase(userRepository)
-	taskUsecase := usecase.NewTaskUsecase(taskRepository)
+	userUsecase := usecase.NewUserUsecase(userRepository, userValidator)
+	taskUsecase := usecase.NewTaskUsecase(taskRepository, taskValidator)
 
 	// Controllerのインジェクション
 	userController := controller.NewUserController(userUsecase)
